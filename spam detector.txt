@@ -1,0 +1,52 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from wordcloud import WordCloud
+
+df = pd.read_csv('E:/spam.csv',encoding = 'ISO-8859-1')
+df = df.drop(columns=['Unnamed: 2','Unnamed: 3','Unnamed: 4'],axis=1)
+df.columns = ['label','data']
+df['blabel'] = df['label'].map({'ham':0, 'spam':1})
+y = df['blabel'].values
+
+clf1 = CountVectorizer(decode_error = 'ignore')
+x1 = clf1.fit_transform(df['data'])
+
+clf2 = TfidfVectorizer(decode_error = 'ignore')
+x2 = clf2.fit_transform(df['data'])
+
+xtrain,xtest,ytrain,ytest = train_test_split(x1,y,test_size = 0.33)
+
+model = MultinomialNB()
+model.fit(xtrain,ytrain)
+print(model.score(xtest,ytest))
+print(model.score(xtrain,ytrain))
+
+def vis(lab):
+    words = ''
+    for msg in df[df['label'] == lab]['data']:
+        msg = msg.lower()
+        words += msg+' '
+    wordcloud = WordCloud(width=600, height=400).generate(words)
+    plt.imshow(wordcloud)
+    plt.axis('off')
+    plt.show()
+    
+vis('spam')
+vis('ham')
+
+df['prediction'] = model.predict(x1)
+print(df)
+
+wrong_pred = df[(df['prediction'] == 0) & (df['blabel']==1)]['data']
+for msg in wrong_pred:
+    print(msg)
+
+not_spam = df[(df['prediction'] == 1) & (df['blabel']==0)]['data']
+for msg in not_spam:
+    print(msg)
+
+ 
